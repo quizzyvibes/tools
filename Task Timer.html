@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Task Timer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h2 { margin-top: 30px; }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .input-group input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .input-group button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+        .input-group button:hover {
+            background-color: #2980b9;
+        }
+        .input-group button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .project {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .project-header h3 {
+            margin: 0;
+            color: #34495e;
+            flex-grow: 1;
+        }
+        .project-controls {
+            display: flex;
+            gap: 8px;
+        }
+        .project-controls button {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+        .project-header .complete-project-btn { background-color: #2ecc71; }
+        .project-header .complete-project-btn:hover { background-color: #27ae60; }
+        .project-header .delete-project-btn { background-color: #e74c3c; }
+        .project-header .delete-project-btn:hover { background-color: #c0392b; }
+
+        .task-list { list-style-type: none; padding: 0; }
+        .task-list li {
+            background-color: #ffffff;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-list li.task-stopped .task-name { text-decoration: line-through; color: #7f8c8d; }
+        .task-list li.task-stopped .task-time,
+        .task-list li.task-paused .task-time { color: #27ae60; }
+
+        .task-list .task-name { flex-grow: 1; }
+        .task-list .task-time {
+            font-weight: bold;
+            color: #e74c3c;
+            min-width: 75px; 
+            text-align: right;
+            margin-left: 10px;
+        }
+        .task-list .task-actions { display: flex; align-items: center; }
+        .task-list .task-actions button { margin-left: 8px; padding: 5px 10px; font-size: 0.85rem; }
+        
+        .task-list .start-task-btn { background-color: #1abc9c; }
+        .task-list .start-task-btn:hover { background-color: #16a085; }
+        
+        .task-list .pause-resume-btn { background-color: #f39c12; }
+        .task-list .pause-resume-btn:hover { background-color: #e67e22; }
+        .task-list .pause-resume-btn.resume { background-color: #3498db; }
+        .task-list .pause-resume-btn.resume:hover { background-color: #2980b9; }
+
+        .task-list .stop-task-btn { background-color: #e74c3c; }
+        .task-list .stop-task-btn:hover { background-color: #c0392b; }
+        
+        .task-list .delete-task-btn { background-color: #95a5a6; }
+        .task-list .delete-task-btn:hover { background-color: #7f8c8d; }
+
+        #completedProjectsContainer .project { background-color: #e9f5e9; }
+        #completedProjectsContainer .task-list .task-time { color: #27ae60; }
+        #completedProjectsContainer .task-list .task-actions { display: none; }
+        #completedProjectsContainer .project-header .complete-project-btn { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Project Task Timer</h1>
+        <div class="input-group">
+            <input type="text" id="newProjectNameInput" placeholder="Enter new project name...">
+            <button id="addProjectButton">Add Project</button>
+        </div>
+        <div id="activeProjectsContainer">
+            <h2>Active Projects</h2>
+            <p id="noActiveProjectsMsg">No active projects yet. Add one above!</p>
+        </div>
+        <div id="completedProjectsContainer">
+            <h2>Completed Projects Log</h2>
+            <p id="noCompletedProjectsMsg">No projects completed yet.</p>
+        </div>
+    </div>
+
+    <script>
+        let projects = [];
+        let nextProjectId = 0;
+        let nextTaskId = 0;
+
+        const newProjectNameInput = document.getElementById('newProjectNameInput');
+        const addProjectButton = document.getElementById('addProjectButton');
+        const activeProjectsContainer = document.getElementById('activeProjectsContainer');
+        const completedProjectsContainer = document.getElementById('completedProjectsContainer');
+
+        const STORAGE_KEY_PROJECTS = 'taskTimerProjects';
+        const STORAGE_KEY_NEXT_IDS = 'taskTimerNextIds';
+
+        function saveProjects() {
+            localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(projects));
+            localStorage.setItem(STORAGE_KEY_NEXT_IDS, JSON.stringify({ nextProjectId, nextTaskId }));
+        }
+
+        function loadProjects() {
+            const storedProjects = localStorage.getItem(STORAGE_KEY_PROJECTS);
+            if (storedProjects) {
+                projects = JSON.parse(storedProjects).map(project => ({
+                    ...project,
+                    tasks: project.tasks.map(task => ({
+                        ...task,
+                        // Reset transient state not suitable for storage
+                        currentRunStartTime: null, 
+                        timerIntervalId: null,
+                        uiElements: {} // Will be repopulated by render
+                    }))
+                }));
+            } else {
+                projects = [];
+            }
+
+            const storedIds = localStorage.getItem(STORAGE_KEY_NEXT_IDS);
+            if (storedIds) {
+                const ids = JSON.parse(storedIds);
+                nextProjectId = ids.nextProjectId || 0;
+                nextTaskId = ids.nextTaskId || 0;
+            } else {
+                nextProjectId = 0;
+                nextTaskId = 0;
+            }
+        }
+        
+        function formatMilliseconds(ms) {
+            if (ms === null || typeof ms === 'undefined') return '00:00:00';
+            let totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            totalSeconds %= 3600;
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return [hours, minutes, seconds].map(val => val < 10 ? `0${val}` : val).join(':');
+        }
+
+        function createProjectElement(project) {
+            const projectDiv = document.createElement('div');
+            projectDiv.className = 'project';
+            projectDiv.dataset.projectId = project.id;
+            const projectHeader = document.createElement('div');
+            projectHeader.className = 'project-header';
+            const projectNameHeading = document.createElement('h3');
+            projectNameHeading.textContent = project.name;
+            projectHeader.appendChild(projectNameHeading);
+            const projectControlsDiv = document.createElement('div');
+            projectControlsDiv.className = 'project-controls';
+            if (project.isActive) {
+                const completeButton = document.createElement('button');
+                completeButton.className = 'complete-project-btn';
+                completeButton.textContent = 'Complete';
+                completeButton.title = "Mark Project as Completed";
+                completeButton.onclick = () => completeProject(project.id);
+                projectControlsDiv.appendChild(completeButton);
+            }
+            const deleteProjectBtn = document.createElement('button');
+            deleteProjectBtn.className = 'delete-project-btn';
+            deleteProjectBtn.textContent = 'Del Project';
+            deleteProjectBtn.title = "Delete Entire Project";
+            deleteProjectBtn.onclick = () => deleteProject(project.id);
+            projectControlsDiv.appendChild(deleteProjectBtn);
+            projectHeader.appendChild(projectControlsDiv);
+            projectDiv.appendChild(projectHeader);
+            if (project.isActive) {
+                const taskAdderDiv = document.createElement('div');
+                taskAdderDiv.className = 'input-group task-adder';
+                const taskNameInputForProject = document.createElement('input');
+                taskNameInputForProject.type = 'text';
+                taskNameInputForProject.placeholder = 'New task for ' + project.name;
+                const addTaskBtn = document.createElement('button');
+                addTaskBtn.textContent = 'Add Task';
+                addTaskBtn.onclick = () => {
+                    const currentTaskName = taskNameInputForProject.value.trim();
+                    if (currentTaskName) {
+                        addTaskToProject(project.id, currentTaskName);
+                        taskNameInputForProject.value = '';
+                        if (document.body.contains(taskNameInputForProject)) taskNameInputForProject.focus();
+                    } else alert("Please enter a task name.");
+                };
+                taskAdderDiv.appendChild(taskNameInputForProject);
+                taskAdderDiv.appendChild(addTaskBtn);
+                projectDiv.appendChild(taskAdderDiv);
+            }
+            const taskListUl = document.createElement('ul');
+            taskListUl.className = 'task-list';
+            project.tasks.forEach(task => {
+                // If a task was 'running' when saved, it should probably be 'paused' on load.
+                // Or, you could add logic to try and auto-resume, but that's more complex.
+                // For now, 'running' tasks will appear as if they were paused at the moment of page close/save.
+                if (task.status === 'running') {
+                    // No, don't change status here. Let updateTaskUIDisplay handle it.
+                    // It will show accumulated time but not actively tick until resumed.
+                }
+                taskListUl.appendChild(createTaskElement(task, project.isActive));
+            });
+            projectDiv.appendChild(taskListUl);
+            return projectDiv;
+        }
+
+        function createTaskElement(task, isProjectActive) {
+            const taskLi = document.createElement('li');
+            taskLi.dataset.taskId = task.id;
+            const taskNameSpan = document.createElement('span');
+            taskNameSpan.className = 'task-name';
+            taskNameSpan.textContent = task.name;
+            const taskTimeSpan = document.createElement('span');
+            taskTimeSpan.className = 'task-time';
+            task.uiElements = { li: taskLi, nameSpan: taskNameSpan, timeSpan: taskTimeSpan, startBtn: null, pauseResumeBtn: null, stopBtn: null, deleteBtn: null };
+            taskLi.appendChild(taskNameSpan);
+            taskLi.appendChild(taskTimeSpan);
+            if (isProjectActive) {
+                const taskActionsDiv = document.createElement('div');
+                taskActionsDiv.className = 'task-actions';
+                const startButton = document.createElement('button');
+                startButton.className = 'start-task-btn';
+                startButton.onclick = () => startTask(task.projectId, task.id);
+                task.uiElements.startBtn = startButton;
+                const pauseResumeButton = document.createElement('button');
+                pauseResumeButton.className = 'pause-resume-btn';
+                pauseResumeButton.onclick = () => {
+                    if (task.status === 'running') pauseTask(task.projectId, task.id);
+                    else if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId)) {
+                        // Special case: if status is 'running' but no interval (e.g., after load), treat as 'paused' for resume
+                        resumeTask(task.projectId, task.id);
+                    }
+                };
+                task.uiElements.pauseResumeBtn = pauseResumeButton;
+                const stopButton = document.createElement('button');
+                stopButton.className = 'stop-task-btn';
+                stopButton.textContent = 'Stop';
+                stopButton.onclick = () => stopTask(task.projectId, task.id);
+                task.uiElements.stopBtn = stopButton;
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-task-btn';
+                deleteButton.textContent = 'Del';
+                deleteButton.title = "Delete Task";
+                deleteButton.onclick = () => deleteTask(task.projectId, task.id);
+                task.uiElements.deleteBtn = deleteButton;
+                taskActionsDiv.appendChild(startButton);
+                taskActionsDiv.appendChild(pauseResumeButton);
+                taskActionsDiv.appendChild(stopButton);
+                taskActionsDiv.appendChild(deleteButton);
+                taskLi.appendChild(taskActionsDiv);
+            }
+            updateTaskUIDisplay(task);
+            return taskLi;
+        }
+        
+        function updateTaskUIDisplay(task) {
+            if (!task.uiElements || !task.uiElements.timeSpan) return;
+            let displayTimeMs;
+            // Check if task is actively running with an interval
+            const isActiveRunning = task.status === 'running' && task.timerIntervalId && task.currentRunStartTime;
+
+            if (isActiveRunning) {
+                displayTimeMs = task.accumulatedDurationMs + (Date.now() - task.currentRunStartTime);
+                task.uiElements.timeSpan.style.color = '#e74c3c';
+                task.uiElements.li.classList.remove('task-paused', 'task-stopped');
+            } else {
+                displayTimeMs = task.accumulatedDurationMs;
+                 if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId) ) { // Treat loaded 'running' as 'paused' for display
+                    task.uiElements.timeSpan.style.color = '#f39c12'; // Paused color
+                    task.uiElements.li.classList.add('task-paused');
+                    task.uiElements.li.classList.remove('task-stopped');
+                } else if (task.status === 'stopped') {
+                    task.uiElements.timeSpan.style.color = '#27ae60';
+                    task.uiElements.li.classList.add('task-stopped');
+                    task.uiElements.li.classList.remove('task-paused');
+                } else { // 'pending'
+                    task.uiElements.timeSpan.style.color = '#7f8c8d';
+                    task.uiElements.li.classList.remove('task-paused', 'task-stopped');
+                }
+            }
+            task.uiElements.timeSpan.textContent = formatMilliseconds(displayTimeMs);
+
+            if (task.uiElements.startBtn && task.uiElements.pauseResumeBtn && task.uiElements.stopBtn) {
+                const { startBtn, pauseResumeBtn, stopBtn } = task.uiElements;
+                startBtn.textContent = 'Start';
+                startBtn.style.display = (task.status === 'pending') ? 'inline-block' : 'none';
+
+                if (isActiveRunning) { // Actively running with timer
+                    pauseResumeBtn.textContent = 'Pause';
+                    pauseResumeBtn.classList.remove('resume');
+                    pauseResumeBtn.style.display = 'inline-block';
+                } else if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId)) { // Paused or loaded 'running'
+                    pauseResumeBtn.textContent = 'Resume';
+                    pauseResumeBtn.classList.add('resume');
+                    pauseResumeBtn.style.display = 'inline-block';
+                } else {
+                    pauseResumeBtn.style.display = 'none';
+                }
+                stopBtn.style.display = (task.status === 'running' || task.status === 'paused') ? 'inline-block' : 'none';
+                if (task.status === 'stopped') {
+                    startBtn.style.display = 'none';
+                    pauseResumeBtn.style.display = 'none';
+                    stopBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function renderProjects() {
+            activeProjectsContainer.innerHTML = '<h2>Active Projects</h2><p id="noActiveProjectsMsg" style="display: none;">No active projects yet. Add one above!</p>';
+            completedProjectsContainer.innerHTML = '<h2>Completed Projects Log</h2><p id="noCompletedProjectsMsg" style="display: none;">No projects completed yet.</p>';
+            const currentNoActiveMsg = document.getElementById('noActiveProjectsMsg');
+            const currentNoCompletedMsg = document.getElementById('noCompletedProjectsMsg');
+            const activePrjs = projects.filter(p => p.isActive);
+            const completedPrjs = projects.filter(p => !p.isActive);
+            if (activePrjs.length === 0) { if(currentNoActiveMsg) currentNoActiveMsg.style.display = 'block'; }
+            else { if(currentNoActiveMsg) currentNoActiveMsg.style.display = 'none'; activePrjs.sort((a,b) => a.creationTime - b.creationTime).forEach(p => activeProjectsContainer.appendChild(createProjectElement(p))); }
+            if (completedPrjs.length === 0) { if(currentNoCompletedMsg) currentNoCompletedMsg.style.display = 'block'; }
+            else { if(currentNoCompletedMsg) currentNoCompletedMsg.style.display = 'none'; completedPrjs.sort((a, b) => (b.completionTime || 0) - (a.completionTime || 0)).forEach(p => completedProjectsContainer.appendChild(createProjectElement(p))); }
+        }
+        
+        function addProject() {
+            const projectName = newProjectNameInput.value.trim();
+            if (!projectName) { alert("Please enter a project name."); return; }
+            const newProject = { id: nextProjectId++, name: projectName, tasks: [], isActive: true, creationTime: Date.now(), completionTime: null };
+            projects.push(newProject);
+            newProjectNameInput.value = '';
+            saveProjects();
+            renderProjects();
+        }
+
+        function addTaskToProject(projectId, taskName) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project || !project.isActive) { console.error(`Project ${projectId} not found/active.`); return; }
+            const newTask = { id: nextTaskId++, projectId: project.id, name: taskName, status: 'pending', currentRunStartTime: null, accumulatedDurationMs: 0, timerIntervalId: null, uiElements: {} };
+            project.tasks.push(newTask);
+            saveProjects();
+            const projectDiv = activeProjectsContainer.querySelector(`.project[data-project-id="${project.id}"]`);
+            if (projectDiv) {
+                const taskListUl = projectDiv.querySelector('.task-list');
+                if (taskListUl) { taskListUl.appendChild(createTaskElement(newTask, true)); }
+                else { renderProjects(); }
+            } else { renderProjects(); }
+        }
+
+        function startTask(projectId, taskId) {
+            const project = projects.find(p => p.id === projectId);
+            const task = project?.tasks.find(t => t.id === taskId);
+            if (!task || task.status !== 'pending') return;
+            task.status = 'running';
+            task.currentRunStartTime = Date.now();
+            task.accumulatedDurationMs = 0; 
+            updateTaskUIDisplay(task); 
+            task.timerIntervalId = setInterval(() => {
+                if (task.status === 'running') { updateTaskUIDisplay(task); }
+                else { clearInterval(task.timerIntervalId); }
+            }, 1000);
+            saveProjects(); 
+        }
+
+        function pauseTask(projectId, taskId) {
+            const project = projects.find(p => p.id === projectId);
+            const task = project?.tasks.find(t => t.id === taskId);
+            if (!task || task.status !== 'running') return;
+            clearInterval(task.timerIntervalId);
+            task.timerIntervalId = null; // Important to mark no active interval
+            task.accumulatedDurationMs += (Date.now() - task.currentRunStartTime);
+            task.status = 'paused'; // Status remains 'paused'
+            task.currentRunStartTime = null;
+            updateTaskUIDisplay(task);
+            saveProjects();
+        }
+
+        function resumeTask(projectId, taskId) {
+            const project = projects.find(p => p.id === projectId);
+            const task = project?.tasks.find(t => t.id === taskId);
+            // Allow resuming 'paused' tasks or 'running' tasks that lost their interval (e.g., after page load)
+            if (!task || !(task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId))) return;
+            
+            task.status = 'running'; // Set to running
+            task.currentRunStartTime = Date.now();
+            updateTaskUIDisplay(task); 
+            task.timerIntervalId = setInterval(() => {
+                if (task.status === 'running') { updateTaskUIDisplay(task); }
+                else { clearInterval(task.timerIntervalId); }
+            }, 1000);
+            saveProjects();
+        }
+
+        function stopTask(projectId, taskId, isProjectCompletion = false) {
+            const project = projects.find(p => p.id === projectId);
+            const task = project?.tasks.find(t => t.id === taskId);
+            if (!task || task.status === 'stopped' || task.status === 'pending') return;
+            
+            if (task.timerIntervalId) { // Check if there's an active interval
+                clearInterval(task.timerIntervalId);
+                task.timerIntervalId = null;
+            }
+
+            if (task.status === 'running' && task.currentRunStartTime) {
+                task.accumulatedDurationMs += (Date.now() - task.currentRunStartTime);
+            }
+            task.status = 'stopped';
+            task.currentRunStartTime = null;
+            updateTaskUIDisplay(task);
+            if (!isProjectCompletion) saveProjects(); // Save unless called by completeProject (which saves once at the end)
+        }
+
+        function deleteTask(projectId, taskId) {
+            if (!confirm("Are you sure you want to delete this task?")) return;
+            const project = projects.find(p => p.id === projectId);
+            if (!project) return;
+            const taskIndex = project.tasks.findIndex(t => t.id === taskId);
+            if (taskIndex === -1) return;
+            const task = project.tasks[taskIndex];
+            if (task.timerIntervalId) clearInterval(task.timerIntervalId);
+            project.tasks.splice(taskIndex, 1);
+            saveProjects();
+            if (task.uiElements && task.uiElements.li) task.uiElements.li.remove();
+            else renderProjects();
+        }
+
+        function deleteProject(projectId) {
+            if (!confirm("Are you sure you want to delete this ENTIRE project and all its tasks? This cannot be undone.")) return;
+            const projectIndex = projects.findIndex(p => p.id === projectId);
+            if (projectIndex === -1) return;
+            const projectToDelete = projects[projectIndex];
+            projectToDelete.tasks.forEach(task => {
+                if (task.timerIntervalId) {
+                    clearInterval(task.timerIntervalId);
+                    task.timerIntervalId = null;
+                }
+            });
+            projects.splice(projectIndex, 1);
+            saveProjects();
+            renderProjects();
+        }
+
+        function completeProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (!project || !project.isActive) return;
+            project.isActive = false;
+            project.completionTime = Date.now();
+            project.tasks.forEach(task => {
+                if (task.status === 'running' || task.status === 'paused') {
+                    stopTask(projectId, task.id, true); // true to prevent redundant save
+                }
+            });
+            saveProjects(); // Save once after all tasks in project are processed
+            renderProjects();
+        }
+
+        // Initial setup
+        addProjectButton.addEventListener('click', addProject);
+        newProjectNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addProject(); });
+        
+        loadProjects(); // Load data from localStorage first
+        renderProjects(); // Then render it
+    </script>
+</body>
+</html>
