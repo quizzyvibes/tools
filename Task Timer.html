@@ -2,41 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Essential for responsiveness -->
     <title>Project Task Timer</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px; /* Reduced body padding for smaller screens */
             background-color: #f0f2f5;
             color: #333;
+            font-size: 16px; /* Base font size */
         }
 
         .container {
-            max-width: 800px;
+            width: 100%; /* Allow container to use full width */
+            max-width: 800px; /* Max width for larger screens */
             margin: 0 auto;
             background-color: #fff;
-            padding: 25px;
+            padding: 15px; /* Reduced container padding */
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Softer shadow */
         }
 
         h1, h2 {
             color: #2c3e50;
             border-bottom: 1px solid #ecf0f1;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
             margin-top: 0;
+            margin-bottom: 15px; /* Consistent bottom margin */
+            font-size: 1.5em; /* Relative font size for h1 */
         }
-        h2 { margin-top: 30px; }
+        h2 {
+            font-size: 1.25em; /* Relative font size for h2 */
+            margin-top: 25px;
+        }
 
         .input-group {
             display: flex;
-            gap: 10px;
+            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+            gap: 8px; /* Reduced gap */
             margin-bottom: 15px;
         }
         .input-group input[type="text"] {
             flex-grow: 1;
+            flex-basis: 200px; /* Give input a base width before growing */
             padding: 10px 12px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -50,7 +59,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background-color 0.2s ease;
+            flex-shrink: 0; /* Prevent button from shrinking too much */
         }
         .input-group button:hover {
             background-color: #2980b9;
@@ -64,58 +73,96 @@
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 6px;
-            padding: 15px;
-            margin-bottom: 20px;
+            padding: 12px; /* Reduced padding */
+            margin-bottom: 15px;
         }
         .project-header {
             display: flex;
+            flex-wrap: wrap; /* Allow wrapping */
             justify-content: space-between;
             align-items: center;
+            gap: 10px; /* Gap between title and controls */
             margin-bottom: 10px;
         }
         .project-header h3 {
             margin: 0;
             color: #34495e;
-            flex-grow: 1;
+            font-size: 1.1em;
+            flex-grow: 1; 
+            word-break: break-word; /* Allow long project names to break */
         }
         .project-controls {
             display: flex;
-            gap: 8px;
+            flex-wrap: wrap; /* Allow project buttons to wrap */
+            gap: 6px; 
         }
         .project-controls button {
             padding: 6px 10px;
-            font-size: 0.85rem;
+            font-size: 0.8rem; /* Slightly smaller project control buttons */
         }
         .project-header .complete-project-btn { background-color: #2ecc71; }
         .project-header .complete-project-btn:hover { background-color: #27ae60; }
         .project-header .delete-project-btn { background-color: #e74c3c; }
         .project-header .delete-project-btn:hover { background-color: #c0392b; }
 
+        /* Task Adder specific styling */
+        .task-adder input[type="text"] {
+            font-size: 0.95rem; /* Slightly smaller for task input */
+        }
+        .task-adder button {
+            font-size: 0.95rem;
+        }
+
         .task-list { list-style-type: none; padding: 0; }
         .task-list li {
             background-color: #ffffff;
-            padding: 10px;
+            padding: 8px 10px; /* Reduced padding */
             margin-bottom: 8px;
             border-radius: 4px;
             border: 1px solid #e0e0e0;
             display: flex;
+            flex-wrap: wrap; /* Allow task items to wrap */
             justify-content: space-between;
             align-items: center;
+            gap: 8px; /* Gap between task name/time and actions */
         }
         .task-list li.task-stopped .task-name { text-decoration: line-through; color: #7f8c8d; }
         .task-list li.task-stopped .task-time,
         .task-list li.task-paused .task-time { color: #27ae60; }
 
-        .task-list .task-name { flex-grow: 1; }
+        .task-list .task-info { /* Group task name and time */
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap; /* Allow name and time to wrap if space is very tight */
+            gap: 8px;
+            min-width: 150px; /* Give it some base width */
+        }
+        .task-list .task-name { 
+            flex-grow: 1; /* Allow name to take available space */
+            font-size: 0.95rem;
+            word-break: break-word; /* Allow long task names to break */
+        }
         .task-list .task-time {
             font-weight: bold;
             color: #e74c3c;
-            min-width: 75px; 
+            min-width: 70px; /* Slightly reduced min-width for time */
             text-align: right;
-            margin-left: 10px;
+            font-size: 0.9rem;
+            flex-shrink: 0; /* Prevent time from shrinking */
         }
-        .task-list .task-actions { display: flex; align-items: center; }
-        .task-list .task-actions button { margin-left: 8px; padding: 5px 10px; font-size: 0.85rem; }
+        .task-list .task-actions { 
+            display: flex; 
+            align-items: center;
+            flex-wrap: nowrap; /* Keep task action buttons in one line usually */
+            gap: 5px; /* Reduced gap between task buttons */
+            flex-shrink: 0; /* Prevent actions div from shrinking excessively */
+        }
+        .task-list .task-actions button { 
+            padding: 5px 8px; 
+            font-size: 0.75rem; /* Smaller task action buttons */
+        }
         
         .task-list .start-task-btn { background-color: #1abc9c; }
         .task-list .start-task-btn:hover { background-color: #16a085; }
@@ -135,6 +182,40 @@
         #completedProjectsContainer .task-list .task-time { color: #27ae60; }
         #completedProjectsContainer .task-list .task-actions { display: none; }
         #completedProjectsContainer .project-header .complete-project-btn { display: none; }
+
+        /* Media Query for very small screens - stack task actions if necessary */
+        @media (max-width: 420px) {
+            .task-list .task-actions {
+                flex-wrap: wrap; /* Allow action buttons to wrap */
+                justify-content: flex-start; /* Align wrapped buttons to the start */
+                width: 100%; /* Take full width if they wrap */
+                margin-top: 5px; /* Add some space if they wrap below name/time */
+            }
+            .task-list li {
+                flex-direction: column; /* Stack info and actions vertically */
+                align-items: flex-start; /* Align items to the start */
+            }
+            .task-list .task-info {
+                width: 100%; /* Task info takes full width */
+            }
+             h1 { font-size: 1.3em; }
+             h2 { font-size: 1.1em; }
+        }
+        @media (max-width: 360px) {
+             .project-controls button,
+             .task-list .task-actions button {
+                padding: 4px 6px;
+                font-size: 0.7rem;
+            }
+            .input-group {
+                flex-direction: column; /* Stack main input group vertically */
+            }
+            .input-group input[type="text"], .input-group button {
+                width: 100%; /* Make them full width when stacked */
+                box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -146,11 +227,11 @@
         </div>
         <div id="activeProjectsContainer">
             <h2>Active Projects</h2>
-            <p id="noActiveProjectsMsg">No active projects yet. Add one above!</p>
+            <p id="noActiveProjectsMsg" style="display: none;">No active projects yet. Add one above!</p>
         </div>
         <div id="completedProjectsContainer">
             <h2>Completed Projects Log</h2>
-            <p id="noCompletedProjectsMsg">No projects completed yet.</p>
+            <p id="noCompletedProjectsMsg" style="display: none;">No projects completed yet.</p>
         </div>
     </div>
 
@@ -179,16 +260,14 @@
                     ...project,
                     tasks: project.tasks.map(task => ({
                         ...task,
-                        // Reset transient state not suitable for storage
                         currentRunStartTime: null, 
                         timerIntervalId: null,
-                        uiElements: {} // Will be repopulated by render
+                        uiElements: {} 
                     }))
                 }));
             } else {
                 projects = [];
             }
-
             const storedIds = localStorage.getItem(STORAGE_KEY_NEXT_IDS);
             if (storedIds) {
                 const ids = JSON.parse(storedIds);
@@ -239,7 +318,7 @@
             projectDiv.appendChild(projectHeader);
             if (project.isActive) {
                 const taskAdderDiv = document.createElement('div');
-                taskAdderDiv.className = 'input-group task-adder';
+                taskAdderDiv.className = 'input-group task-adder'; // Added task-adder class
                 const taskNameInputForProject = document.createElement('input');
                 taskNameInputForProject.type = 'text';
                 taskNameInputForProject.placeholder = 'New task for ' + project.name;
@@ -260,13 +339,6 @@
             const taskListUl = document.createElement('ul');
             taskListUl.className = 'task-list';
             project.tasks.forEach(task => {
-                // If a task was 'running' when saved, it should probably be 'paused' on load.
-                // Or, you could add logic to try and auto-resume, but that's more complex.
-                // For now, 'running' tasks will appear as if they were paused at the moment of page close/save.
-                if (task.status === 'running') {
-                    // No, don't change status here. Let updateTaskUIDisplay handle it.
-                    // It will show accumulated time but not actively tick until resumed.
-                }
                 taskListUl.appendChild(createTaskElement(task, project.isActive));
             });
             projectDiv.appendChild(taskListUl);
@@ -276,14 +348,24 @@
         function createTaskElement(task, isProjectActive) {
             const taskLi = document.createElement('li');
             taskLi.dataset.taskId = task.id;
+
+            // Create a wrapper for task name and time for better flexbox control
+            const taskInfoDiv = document.createElement('div');
+            taskInfoDiv.className = 'task-info';
+
             const taskNameSpan = document.createElement('span');
             taskNameSpan.className = 'task-name';
             taskNameSpan.textContent = task.name;
+            taskInfoDiv.appendChild(taskNameSpan);
+
             const taskTimeSpan = document.createElement('span');
             taskTimeSpan.className = 'task-time';
+            taskInfoDiv.appendChild(taskTimeSpan);
+
             task.uiElements = { li: taskLi, nameSpan: taskNameSpan, timeSpan: taskTimeSpan, startBtn: null, pauseResumeBtn: null, stopBtn: null, deleteBtn: null };
-            taskLi.appendChild(taskNameSpan);
-            taskLi.appendChild(taskTimeSpan);
+            
+            taskLi.appendChild(taskInfoDiv); // Add the info wrapper
+
             if (isProjectActive) {
                 const taskActionsDiv = document.createElement('div');
                 taskActionsDiv.className = 'task-actions';
@@ -294,9 +376,8 @@
                 const pauseResumeButton = document.createElement('button');
                 pauseResumeButton.className = 'pause-resume-btn';
                 pauseResumeButton.onclick = () => {
-                    if (task.status === 'running') pauseTask(task.projectId, task.id);
+                    if (task.status === 'running' && task.timerIntervalId) pauseTask(task.projectId, task.id);
                     else if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId)) {
-                        // Special case: if status is 'running' but no interval (e.g., after load), treat as 'paused' for resume
                         resumeTask(task.projectId, task.id);
                     }
                 };
@@ -316,7 +397,7 @@
                 taskActionsDiv.appendChild(pauseResumeButton);
                 taskActionsDiv.appendChild(stopButton);
                 taskActionsDiv.appendChild(deleteButton);
-                taskLi.appendChild(taskActionsDiv);
+                taskLi.appendChild(taskActionsDiv); // Add actions div
             }
             updateTaskUIDisplay(task);
             return taskLi;
@@ -325,7 +406,6 @@
         function updateTaskUIDisplay(task) {
             if (!task.uiElements || !task.uiElements.timeSpan) return;
             let displayTimeMs;
-            // Check if task is actively running with an interval
             const isActiveRunning = task.status === 'running' && task.timerIntervalId && task.currentRunStartTime;
 
             if (isActiveRunning) {
@@ -334,15 +414,15 @@
                 task.uiElements.li.classList.remove('task-paused', 'task-stopped');
             } else {
                 displayTimeMs = task.accumulatedDurationMs;
-                 if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId) ) { // Treat loaded 'running' as 'paused' for display
-                    task.uiElements.timeSpan.style.color = '#f39c12'; // Paused color
+                 if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId) ) { 
+                    task.uiElements.timeSpan.style.color = '#f39c12'; 
                     task.uiElements.li.classList.add('task-paused');
                     task.uiElements.li.classList.remove('task-stopped');
                 } else if (task.status === 'stopped') {
                     task.uiElements.timeSpan.style.color = '#27ae60';
                     task.uiElements.li.classList.add('task-stopped');
                     task.uiElements.li.classList.remove('task-paused');
-                } else { // 'pending'
+                } else { 
                     task.uiElements.timeSpan.style.color = '#7f8c8d';
                     task.uiElements.li.classList.remove('task-paused', 'task-stopped');
                 }
@@ -354,11 +434,11 @@
                 startBtn.textContent = 'Start';
                 startBtn.style.display = (task.status === 'pending') ? 'inline-block' : 'none';
 
-                if (isActiveRunning) { // Actively running with timer
+                if (isActiveRunning) { 
                     pauseResumeBtn.textContent = 'Pause';
                     pauseResumeBtn.classList.remove('resume');
                     pauseResumeBtn.style.display = 'inline-block';
-                } else if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId)) { // Paused or loaded 'running'
+                } else if (task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId)) { 
                     pauseResumeBtn.textContent = 'Resume';
                     pauseResumeBtn.classList.add('resume');
                     pauseResumeBtn.style.display = 'inline-block';
@@ -429,11 +509,11 @@
         function pauseTask(projectId, taskId) {
             const project = projects.find(p => p.id === projectId);
             const task = project?.tasks.find(t => t.id === taskId);
-            if (!task || task.status !== 'running') return;
+            if (!task || task.status !== 'running' || !task.timerIntervalId) return; // Ensure it's actively running
             clearInterval(task.timerIntervalId);
-            task.timerIntervalId = null; // Important to mark no active interval
+            task.timerIntervalId = null; 
             task.accumulatedDurationMs += (Date.now() - task.currentRunStartTime);
-            task.status = 'paused'; // Status remains 'paused'
+            task.status = 'paused'; 
             task.currentRunStartTime = null;
             updateTaskUIDisplay(task);
             saveProjects();
@@ -442,10 +522,8 @@
         function resumeTask(projectId, taskId) {
             const project = projects.find(p => p.id === projectId);
             const task = project?.tasks.find(t => t.id === taskId);
-            // Allow resuming 'paused' tasks or 'running' tasks that lost their interval (e.g., after page load)
             if (!task || !(task.status === 'paused' || (task.status === 'running' && !task.timerIntervalId))) return;
-            
-            task.status = 'running'; // Set to running
+            task.status = 'running'; 
             task.currentRunStartTime = Date.now();
             updateTaskUIDisplay(task); 
             task.timerIntervalId = setInterval(() => {
@@ -459,19 +537,14 @@
             const project = projects.find(p => p.id === projectId);
             const task = project?.tasks.find(t => t.id === taskId);
             if (!task || task.status === 'stopped' || task.status === 'pending') return;
-            
-            if (task.timerIntervalId) { // Check if there's an active interval
-                clearInterval(task.timerIntervalId);
-                task.timerIntervalId = null;
-            }
-
+            if (task.timerIntervalId) { clearInterval(task.timerIntervalId); task.timerIntervalId = null; }
             if (task.status === 'running' && task.currentRunStartTime) {
                 task.accumulatedDurationMs += (Date.now() - task.currentRunStartTime);
             }
             task.status = 'stopped';
             task.currentRunStartTime = null;
             updateTaskUIDisplay(task);
-            if (!isProjectCompletion) saveProjects(); // Save unless called by completeProject (which saves once at the end)
+            if (!isProjectCompletion) saveProjects();
         }
 
         function deleteTask(projectId, taskId) {
@@ -493,12 +566,7 @@
             const projectIndex = projects.findIndex(p => p.id === projectId);
             if (projectIndex === -1) return;
             const projectToDelete = projects[projectIndex];
-            projectToDelete.tasks.forEach(task => {
-                if (task.timerIntervalId) {
-                    clearInterval(task.timerIntervalId);
-                    task.timerIntervalId = null;
-                }
-            });
+            projectToDelete.tasks.forEach(task => { if (task.timerIntervalId) { clearInterval(task.timerIntervalId); task.timerIntervalId = null; } });
             projects.splice(projectIndex, 1);
             saveProjects();
             renderProjects();
@@ -509,21 +577,16 @@
             if (!project || !project.isActive) return;
             project.isActive = false;
             project.completionTime = Date.now();
-            project.tasks.forEach(task => {
-                if (task.status === 'running' || task.status === 'paused') {
-                    stopTask(projectId, task.id, true); // true to prevent redundant save
-                }
-            });
-            saveProjects(); // Save once after all tasks in project are processed
+            project.tasks.forEach(task => { if (task.status === 'running' || task.status === 'paused') { stopTask(projectId, task.id, true); } });
+            saveProjects(); 
             renderProjects();
         }
 
-        // Initial setup
         addProjectButton.addEventListener('click', addProject);
         newProjectNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addProject(); });
         
-        loadProjects(); // Load data from localStorage first
-        renderProjects(); // Then render it
+        loadProjects(); 
+        renderProjects(); 
     </script>
 </body>
 </html>
