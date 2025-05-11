@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Habit Tracker</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .input-area input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .input-area button {
+            padding: 10px 18px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .input-area button:hover {
+            background-color: #2980b9;
+        }
+
+        .habit-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .habit-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .habit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .habit-name {
+            font-size: 1.2em;
+            font-weight: 500;
+            color: #34495e;
+        }
+
+        .delete-habit-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .delete-habit-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+            gap: 5px;
+        }
+
+        .day-cell {
+            width: 35px;
+            height: 35px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background-color 0.2s, color 0.2s, transform 0.1s;
+            background-color: #e0e0e0;
+        }
+
+        .day-cell.completed {
+            background-color: #2ecc71;
+            color: white;
+            border-color: #27ae60;
+        }
+        .day-cell:hover {
+            transform: scale(1.1);
+        }
+
+        .clear-all-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 10px 15px;
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .clear-all-btn:hover {
+            background-color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Habit Tracker</h1>
+
+        <div class="input-area">
+            <input type="text" id="newHabitInput" placeholder="Enter new habit (e.g., Read for 30 mins)">
+            <button id="addHabitBtn">Add Habit</button>
+        </div>
+
+        <ul id="habitList" class="habit-list">
+            <!-- Habits will be rendered here by JavaScript -->
+        </ul>
+         <button id="clearAllDataBtn" class="clear-all-btn">Clear All Data (localStorage)</button>
+    </div>
+
+    <script>
+        const newHabitInput = document.getElementById('newHabitInput');
+        const addHabitBtn = document.getElementById('addHabitBtn');
+        const habitListUl = document.getElementById('habitList');
+        const clearAllDataBtn = document.getElementById('clearAllDataBtn');
+        const NUM_DAYS = 30; // Track for 30 days
+
+        let habits = [];
+
+        // --- LocalStorage Functions ---
+        function loadHabits() {
+            const storedHabits = localStorage.getItem('habits');
+            if (storedHabits) {
+                habits = JSON.parse(storedHabits);
+            }
+            renderHabits();
+        }
+
+        function saveHabits() {
+            localStorage.setItem('habits', JSON.stringify(habits));
+        }
+
+        // --- Core Logic Functions ---
+        function addHabit() {
+            const habitName = newHabitInput.value.trim();
+            if (habitName === "") {
+                alert("Please enter a habit name.");
+                return;
+            }
+
+            const newHabit = {
+                id: Date.now().toString(), // Unique ID
+                name: habitName,
+                completedDays: Array(NUM_DAYS).fill(false) // Array of 30 booleans
+            };
+
+            habits.push(newHabit);
+            newHabitInput.value = ""; // Clear input
+            saveHabits();
+            renderHabits();
+        }
+
+        function deleteHabit(habitId) {
+            if (confirm("Are you sure you want to delete this habit and its progress?")) {
+                habits = habits.filter(habit => habit.id !== habitId);
+                saveHabits();
+                renderHabits();
+            }
+        }
+
+        function toggleDayCompletion(habitId, dayIndex) {
+            const habit = habits.find(h => h.id === habitId);
+            if (habit) {
+                habit.completedDays[dayIndex] = !habit.completedDays[dayIndex];
+                saveHabits();
+                renderHabits(); // Could optimize to only re-render the specific cell
+            }
+        }
+
+        // --- Rendering Function ---
+        function renderHabits() {
+            habitListUl.innerHTML = ""; // Clear current list
+
+            if (habits.length === 0) {
+                habitListUl.innerHTML = "<p style='text-align:center; color: #777;'>No habits yet. Add one above!</p>";
+                return;
+            }
+
+            habits.forEach(habit => {
+                const li = document.createElement('li');
+                li.classList.add('habit-item');
+                li.setAttribute('data-habit-id', habit.id);
+
+                const headerDiv = document.createElement('div');
+                headerDiv.classList.add('habit-header');
+
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('habit-name');
+                nameSpan.textContent = habit.name;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-habit-btn');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => deleteHabit(habit.id);
+
+                headerDiv.appendChild(nameSpan);
+                headerDiv.appendChild(deleteBtn);
+
+                const daysGridDiv = document.createElement('div');
+                daysGridDiv.classList.add('days-grid');
+
+                habit.completedDays.forEach((isCompleted, index) => {
+                    const dayCell = document.createElement('div');
+                    dayCell.classList.add('day-cell');
+                    dayCell.textContent = index + 1; // Day number (1-30)
+                    if (isCompleted) {
+                        dayCell.classList.add('completed');
+                    }
+                    dayCell.onclick = () => toggleDayCompletion(habit.id, index);
+                    daysGridDiv.appendChild(dayCell);
+                });
+
+                li.appendChild(headerDiv);
+                li.appendChild(daysGridDiv);
+                habitListUl.appendChild(li);
+            });
+        }
+
+        // --- Event Listeners ---
+        addHabitBtn.addEventListener('click', addHabit);
+        newHabitInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                addHabit();
+            }
+        });
+
+        clearAllDataBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to delete ALL habits and progress? This cannot be undone.")) {
+                localStorage.removeItem('habits');
+                habits = []; // Clear the in-memory array
+                renderHabits(); // Re-render to show empty state
+            }
+        });
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', loadHabits);
+
+    </script>
+
+</body>
+</html>
